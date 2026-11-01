@@ -1,0 +1,25 @@
+[Unit]
+Description=Campus Bus Tracker API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=campus-bus
+Group=campus-bus
+WorkingDirectory=/var/www/campus-bus/current/backend
+EnvironmentFile=/etc/campus-bus/backend.env
+ExecStart=/usr/bin/node dist/server.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/campus-bus /var/lib/campus-bus
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

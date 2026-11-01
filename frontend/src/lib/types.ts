@@ -1,0 +1,9 @@
+export type Role = 'student' | 'admin';
+export type User = { id: number; name: string; email: string; role: Role };
+export type Pagination = { page: number; limit: number; total: number; totalPages: number };
+export type RouteRecord = { id: number; name: string; description?: string | null; status: 'active' | 'inactive'; stop_count?: number; stops?: StopRecord[] };
+export type StopRecord = { id: number; name: string; latitude: number; longitude: number; status: 'active' | 'inactive'; stop_order?: number; route_count?: number; routes?: Pick<RouteRecord,'id'|'name'|'status'>[] };
+export type Departure = { id: number; stop_id: number; stop_name: string; route_id: number; route_name: string; departure_at: string; cancelled: boolean; notice?: string | null; departureTime?: string; dayOfWeek?: number; stopId?: number; stopName?: string };
+export type Timetable = { id: number; route_id: number; route_name: string; effective_from: string; effective_to: string; status: 'active'|'inactive'; schedule_type: 'weekday'|'weekend'|'seasonal'; departures: Departure[] };
+export type Announcement = { id: number; route_id?: number|null; stop_id?: number|null; route_name?: string|null; stop_name?: string|null; type: 'delay'|'cancellation'|'info'; message: string; starts_at: string; ends_at: string };
+export type Favorite = { id: number; stop_id: number; stop_name: string; latitude: number; longitude: number; status: 'active'|'inactive'; departures: {route_id:number;route_name:string;departure_at:string}[]; announcements: {id:number;type:Announcement['type'];message:string;endsAt:string}[] };

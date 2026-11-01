@@ -1,0 +1,66 @@
+{
+  "info": {
+    "_postman_id": "d7d5aa34-3f87-4bf3-a37a-campusbusgroup11",
+    "name": "Campus Bus Tracker API",
+    "description": "Group 11 API. Run Get CSRF first; its test stores csrfToken. No credentials are committed.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key":"baseUrl","value":"http://localhost:4000/api"},
+    {"key":"csrfToken","value":""},
+    {"key":"email","value":"student@example.edu"},
+    {"key":"password","value":""},
+    {"key":"routeId","value":"1"},
+    {"key":"stopId","value":"1"},
+    {"key":"timetableId","value":"1"},
+    {"key":"departureId","value":"1"},
+    {"key":"announcementId","value":"1"}
+  ],
+  "item": [
+    {"name":"Authentication","item":[
+      {"name":"Get CSRF","event":[{"listen":"test","script":{"exec":["const body = pm.response.json();","pm.collectionVariables.set('csrfToken', body.data.csrfToken);"]}}],"request":{"method":"GET","url":"{{baseUrl}}/auth/csrf"}},
+      {"name":"Register student","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\n  \"name\": \"Example Student\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"},"url":"{{baseUrl}}/auth/register"}},
+      {"name":"Login","event":[{"listen":"test","script":{"exec":["const body = pm.response.json();","if (body.success) pm.collectionVariables.set('csrfToken', body.data.csrfToken);"]}}],"request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"},"url":"{{baseUrl}}/auth/login"}},
+      {"name":"Current user","request":{"method":"GET","url":"{{baseUrl}}/auth/me"}},
+      {"name":"Logout","request":{"method":"POST","header":[{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"url":"{{baseUrl}}/auth/logout"}}
+    ]},
+    {"name":"Routes","item":[
+      {"name":"List routes","request":{"method":"GET","url":"{{baseUrl}}/routes?q=&page=1&limit=20"}},
+      {"name":"Route detail","request":{"method":"GET","url":"{{baseUrl}}/routes/{{routeId}}"}},
+      {"name":"Create route","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\n  \"name\": \"Example Loop\",\n  \"description\": \"Coursework example\",\n  \"status\": \"inactive\"\n}"},"url":"{{baseUrl}}/routes"}},
+      {"name":"Update route","request":{"method":"PATCH","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"description\":\"Updated description\"}"},"url":"{{baseUrl}}/routes/{{routeId}}"}},
+      {"name":"Assign ordered stops","request":{"method":"PUT","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"stopIds\":[1,2]}"},"url":"{{baseUrl}}/routes/{{routeId}}/stops"}},
+      {"name":"Deactivate route","request":{"method":"DELETE","header":[{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"url":"{{baseUrl}}/routes/{{routeId}}"}}
+    ]},
+    {"name":"Stops","item":[
+      {"name":"List stops","request":{"method":"GET","url":"{{baseUrl}}/stops?q=&page=1&limit=20"}},
+      {"name":"Stop detail","request":{"method":"GET","url":"{{baseUrl}}/stops/{{stopId}}"}},
+      {"name":"Create stop","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\n  \"name\": \"Example Gate\",\n  \"latitude\": 30.0588,\n  \"longitude\": 31.2811,\n  \"status\": \"active\"\n}"},"url":"{{baseUrl}}/stops"}},
+      {"name":"Update stop","request":{"method":"PATCH","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"latitude\":30.059}"},"url":"{{baseUrl}}/stops/{{stopId}}"}},
+      {"name":"Deactivate stop","request":{"method":"DELETE","header":[{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"url":"{{baseUrl}}/stops/{{stopId}}"}}
+    ]},
+    {"name":"Schedules","item":[
+      {"name":"List timetables","request":{"method":"GET","url":"{{baseUrl}}/timetables?routeId={{routeId}}&page=1&limit=20"}},
+      {"name":"Next departures","request":{"method":"GET","url":"{{baseUrl}}/departures/next?stopId={{stopId}}&count=5"}},
+      {"name":"Create timetable","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\n  \"routeId\": {{routeId}},\n  \"effectiveFrom\": \"2026-09-01\",\n  \"effectiveTo\": \"2027-06-30\",\n  \"status\": \"active\",\n  \"scheduleType\": \"weekday\",\n  \"departures\": [{\"stopId\":{{stopId}},\"departureTime\":\"08:30\",\"dayOfWeek\":1}]\n}"},"url":"{{baseUrl}}/timetables"}},
+      {"name":"Update timetable","request":{"method":"PATCH","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"effectiveTo\":\"2027-07-31\"}"},"url":"{{baseUrl}}/timetables/{{timetableId}}"}},
+      {"name":"Add departure","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"stopId\":{{stopId}},\"departureTime\":\"10:30\",\"dayOfWeek\":1}"},"url":"{{baseUrl}}/timetables/{{timetableId}}/departures"}},
+      {"name":"Update departure","request":{"method":"PATCH","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"departureTime\":\"10:45\"}"},"url":"{{baseUrl}}/departures/{{departureId}}"}},
+      {"name":"Delete departure","request":{"method":"DELETE","header":[{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"url":"{{baseUrl}}/departures/{{departureId}}"}},
+      {"name":"Deactivate timetable","request":{"method":"DELETE","header":[{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"url":"{{baseUrl}}/timetables/{{timetableId}}"}}
+    ]},
+    {"name":"Announcements","item":[
+      {"name":"List active notices","request":{"method":"GET","url":"{{baseUrl}}/announcements?routeId={{routeId}}&page=1&limit=20"}},
+      {"name":"Create notice","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\n  \"routeId\": {{routeId}},\n  \"stopId\": null,\n  \"type\": \"delay\",\n  \"message\": \"Example service delay for testing.\",\n  \"startsAt\": \"2026-10-31T08:00:00+02:00\",\n  \"endsAt\": \"2026-10-31T18:00:00+02:00\"\n}"},"url":"{{baseUrl}}/announcements"}},
+      {"name":"Update notice","request":{"method":"PATCH","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"message\":\"Updated service information.\"}"},"url":"{{baseUrl}}/announcements/{{announcementId}}"}},
+      {"name":"Expire notice","request":{"method":"DELETE","header":[{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"url":"{{baseUrl}}/announcements/{{announcementId}}"}}
+    ]},
+    {"name":"Favorites and audit","item":[
+      {"name":"List favorites","request":{"method":"GET","url":"{{baseUrl}}/favorites"}},
+      {"name":"Add favorite","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"stopId\":{{stopId}}}"},"url":"{{baseUrl}}/favorites"}},
+      {"name":"Remove favorite","request":{"method":"DELETE","header":[{"key":"X-CSRF-Token","value":"{{csrfToken}}"}],"url":"{{baseUrl}}/favorites/{{stopId}}"}},
+      {"name":"Audit logs","request":{"method":"GET","url":"{{baseUrl}}/audit-logs?page=1&limit=20&resource=route"}},
+      {"name":"Health","request":{"method":"GET","url":"{{baseUrl}}/health"}}
+    ]}
+  ]
+}

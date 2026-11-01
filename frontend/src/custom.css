@@ -1,0 +1,13 @@
+/* Only application behaviors not represented by the supplied template utilities live here. */
+/* The supplied template references this variable but does not define it. */
+:root { --font-noto-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.campus-map { min-height: 24rem; width: 100%; }
+.campus-map .leaflet-container { height: 24rem; width: 100%; border-radius: var(--radius); }
+.campus-map-marker { align-items: center; background: var(--primary); border: 3px solid var(--card); border-radius: 999px; box-shadow: 0 1px 5px rgb(0 0 0 / 30%); color: var(--primary-foreground); display: flex; font-size: 11px; font-weight: 700; height: 28px; justify-content: center; width: 28px; }
+.native-dialog { border: 0; padding: 0; background: transparent; color: inherit; max-width: min(42rem, calc(100vw - 2rem)); width: 100%; }
+.native-dialog::backdrop { background: rgb(2 6 23 / 65%); backdrop-filter: blur(3px); }
+.skip-link { position: fixed; left: 1rem; top: -5rem; z-index: 10000; }
+.skip-link:focus { top: 1rem; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
