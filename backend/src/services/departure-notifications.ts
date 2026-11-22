@@ -10,6 +10,16 @@ const transporter = env.EMAIL_NOTIFICATIONS_ENABLED && env.SMTP_USER && env.SMTP
   ? nodemailer.createTransport({ host: env.SMTP_HOST, port: env.SMTP_PORT, secure: env.SMTP_PORT === 465, auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } })
   : undefined;
 
+export async function sendRegistrationConfirmation(name: string, to: string) {
+  if (!transporter) return;
+  await transporter.sendMail({
+    from: env.SMTP_FROM ?? env.SMTP_USER,
+    to,
+    subject: 'Welcome to Campus Bus',
+    text: `Hi ${name}, your Campus Bus account is confirmed. You can now log in, save favorite stops, and receive scheduled departure reminders.`
+  });
+}
+
 function pendingNotifications(data: CampusData, now: DateTime): PendingNotification[] {
   const sent = new Set(data.notificationLogs.map((record) => record.key));
   const serviceDate = now.setZone(env.CAMPUS_TIMEZONE).toISODate()!;

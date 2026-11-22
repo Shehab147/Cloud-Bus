@@ -8,6 +8,7 @@ import { requireAuth } from '../../middleware/auth.js';
 import { ensureCsrfToken } from '../../middleware/csrf.js';
 import { conflict, HttpError } from '../../utils/http-error.js';
 import { requireTurnstile } from '../../middleware/turnstile.js';
+import { sendRegistrationConfirmation } from '../../services/departure-notifications.js';
 
 const router = Router();
 const authLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
@@ -35,6 +36,7 @@ router.post('/register', authLimiter, validate(registerSchema), requireTurnstile
     return created;
   });
   const { passwordHash: _passwordHash, createdAt, ...safe } = user;
+  void sendRegistrationConfirmation(user.name, user.email).catch((error) => console.error('Registration confirmation email failed', error));
   res.status(201).json({ success: true, data: { ...safe, created_at: createdAt }, message: 'Account created successfully' });
 });
 
