@@ -7,6 +7,7 @@ import { validate } from '../../middleware/validate.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { ensureCsrfToken } from '../../middleware/csrf.js';
 import { conflict, HttpError } from '../../utils/http-error.js';
+import { requireTurnstile } from '../../middleware/turnstile.js';
 
 const router = Router();
 const authLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
@@ -14,13 +15,14 @@ const controlChars = /[\u0000-\u001F\u007F]/;
 const registerSchema = z.object({
   name: z.string().trim().min(2, 'Enter your name (2–100 characters).').max(100, 'Enter your name (2–100 characters).').refine((value) => !controlChars.test(value), 'Name contains invalid characters.'),
   email: z.string().trim().toLowerCase().max(254).email('Enter a valid email address.'),
-  password: z.string().min(12, 'Use at least 12 characters.').max(128, 'Password must be 128 characters or less.')
+  password: z.string().min(12, 'Use at least 12 characters.').max(128, 'Password must be 128 characters or less.'),
+  turnstileToken: z.string().min(1).max(2048)
 }).strict();
-const loginSchema = z.object({ email: z.string().trim().toLowerCase().max(254).email(), password: z.string().min(1).max(128) }).strict();
+const loginSchema = z.object({ email: z.string().trim().toLowerCase().max(254).email(), password: z.string().min(1).max(128), turnstileToken: z.string().min(1).max(2048) }).strict();
 
 router.get('/csrf', (req, res) => res.json({ success: true, data: { csrfToken: ensureCsrfToken(req) } }));
 
-router.post('/register', authLimiter, validate(registerSchema), async (req, res) => {
+router.post('/register', authLimiter, validate(registerSchema), requireTurnstile('register'), async (req, res) => {
   const { name, email, password } = req.body;
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await mutateData((data) => {
@@ -35,7 +37,7 @@ router.post('/register', authLimiter, validate(registerSchema), async (req, res)
   res.status(201).json({ success: true, data: { ...safe, created_at: createdAt }, message: 'Account created successfully' });
 });
 
-router.post('/login', authLimiter, validate(loginSchema), async (req, res, next) => {
+router.post('/login', authLimiter, validate(loginSchema), requireTurnstile('login'), async (req, res, next) => {
   const user = (await readData()).users.find((candidate) => candidate.email.toLowerCase() === req.body.email);
   if (!user || !(await bcrypt.compare(req.body.password, user.passwordHash))) throw new HttpError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
   req.session.regenerate((error) => {

@@ -78,14 +78,6 @@ export function createSeedData(): CampusData {
   };
 }
 
-async function persist(data: CampusData) {
-  if (env.NODE_ENV === 'test') return;
-  await mkdir(dirname(dataFile), { recursive: true });
-  const temporary = `${dataFile}.${process.pid}.tmp`;
-  await writeFile(temporary, `${JSON.stringify(data, null, 2)}\n`, { mode: 0o600 });
-  await rename(temporary, dataFile);
-}
-
 export async function readData(): Promise<CampusData> {
   if (cache) return cache;
   if (env.NODE_ENV === 'test') return (cache = createSeedData());
@@ -97,6 +89,14 @@ export async function readData(): Promise<CampusData> {
     await persist(cache);
   }
   return cache;
+}
+
+async function persist(data: CampusData) {
+  if (env.NODE_ENV === 'test') return;
+  await mkdir(dirname(dataFile), { recursive: true });
+  const temporary = `${dataFile}.${process.pid}.tmp`;
+  await writeFile(temporary, `${JSON.stringify(data, null, 2)}\n`, { mode: 0o600 });
+  await rename(temporary, dataFile);
 }
 
 export function nextId(data: CampusData, collection: keyof CampusData): number {

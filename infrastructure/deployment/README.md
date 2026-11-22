@@ -9,8 +9,8 @@ This storage model must run as one API process. Do not use Node cluster mode, PM
 Create a `campus-bus` system user and these protected locations:
 
 - `/var/www/campus-bus/releases` and `/var/www/campus-bus/current` for application releases.
-- `/var/lib/campus-bus` owned by `campus-bus`, mode `0700`, for the data file.
 - `/etc/campus-bus/backend.env` owned by root, mode `0600`, for configuration.
+- `/var/lib/campus-bus` owned by `campus-bus`, mode `0700`, for the data file.
 - `/var/log/campus-bus` if file-based logs are enabled; journald is sufficient by default.
 
 Back up `/var/lib/campus-bus/campus-bus.json` before each deployment that changes data behavior.
@@ -23,14 +23,16 @@ Create `/etc/campus-bus/backend.env`:
 NODE_ENV=production
 PORT=4000
 SESSION_SECRET=AT_LEAST_32_RANDOM_CHARACTERS
-APP_ORIGIN=https://bus.example.edu
+APP_ORIGIN=https://a2cloud.online
 CAMPUS_TIMEZONE=Africa/Cairo
 DATA_FILE=/var/lib/campus-bus/campus-bus.json
 TRUST_PROXY=1
 LOG_LEVEL=info
+TURNSTILE_SECRET=SET_IN_YOUR_SECRET_STORE
+TURNSTILE_HOSTNAMES=a2cloud.online
 ```
 
-Do not store the session secret or admin password in Git. Sessions are intentionally in memory; a service restart signs users out but does not affect saved application records.
+Do not store the session secret, Turnstile secret, or admin password in Git. `TURNSTILE_HOSTNAMES` is the comma-separated list of frontend hostnames for this deployment; do not include `localhost` in production. Sessions are intentionally in memory; a service restart signs users out but does not affect saved application records.
 
 ## 3. Build and release
 
@@ -52,7 +54,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now campus-bus-api
 sudo nginx -t
 sudo systemctl reload nginx
-curl --fail --silent https://bus.example.edu/api/health
+curl --fail --silent https://a2cloud.online/api/health
 ```
 
 The systemd unit grants the service write access to `/var/lib/campus-bus`. The Nginx template serves the SPA, proxies `/api` to `127.0.0.1:4000`, and applies request/security controls.

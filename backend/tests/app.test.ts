@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { isoNow, mutateData, nextId, resetData } from '../src/data/store.js';
 
+process.env.NODE_ENV = 'test';
 const { app } = await import('../src/app.js');
 
 describe('API security and response conventions', () => {
@@ -44,7 +45,7 @@ describe('API security and response conventions', () => {
   it('returns generic invalid-login feedback without account enumeration', async () => {
     const agent = request.agent(app);
     const csrf = await agent.get('/api/auth/csrf');
-    const response = await agent.post('/api/auth/login').set('x-csrf-token', csrf.body.data.csrfToken).send({ email: 'missing@example.edu', password: 'incorrect-password' });
+    const response = await agent.post('/api/auth/login').set('x-csrf-token', csrf.body.data.csrfToken).send({ email: 'missing@example.edu', password: 'incorrect-password', turnstileToken: 'test-token' });
     expect(response.status).toBe(401);
     expect(response.body.error.message).toBe('Email or password is incorrect.');
   });
@@ -60,10 +61,10 @@ describe('API security and response conventions', () => {
   it('registers, logs in, and persists a student favorite', async () => {
     const agent = request.agent(app);
     const firstCsrf = (await agent.get('/api/auth/csrf')).body.data.csrfToken;
-    const register = await agent.post('/api/auth/register').set('x-csrf-token', firstCsrf).send({ name: 'Test Student', email: 'student@example.edu', password: 'long-enough-password' });
+    const register = await agent.post('/api/auth/register').set('x-csrf-token', firstCsrf).send({ name: 'Test Student', email: 'student@example.edu', password: 'long-enough-password', turnstileToken: 'test-token' });
     expect(register.status).toBe(201);
 
-    const login = await agent.post('/api/auth/login').set('x-csrf-token', firstCsrf).send({ email: 'student@example.edu', password: 'long-enough-password' });
+    const login = await agent.post('/api/auth/login').set('x-csrf-token', firstCsrf).send({ email: 'student@example.edu', password: 'long-enough-password', turnstileToken: 'test-token' });
     expect(login.status).toBe(200);
     expect(login.body.data.user.role).toBe('student');
 
@@ -80,7 +81,7 @@ describe('API security and response conventions', () => {
     });
     const agent = request.agent(app);
     const csrf = (await agent.get('/api/auth/csrf')).body.data.csrfToken;
-    const login = await agent.post('/api/auth/login').set('x-csrf-token', csrf).send({ email: 'admin@example.edu', password: 'admin-test-password' });
+    const login = await agent.post('/api/auth/login').set('x-csrf-token', csrf).send({ email: 'admin@example.edu', password: 'admin-test-password', turnstileToken: 'test-token' });
     const created = await agent.post('/api/stops').set('x-csrf-token', login.body.data.csrfToken).send({ name: 'Test Inactive Stop', latitude: 30.05, longitude: 31.28, status: 'inactive' });
     expect(created.status).toBe(201);
 

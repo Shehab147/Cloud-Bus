@@ -13,7 +13,9 @@ const envSchema = z.object({
   CAMPUS_TIMEZONE: z.string().default('Africa/Cairo'),
   DATA_FILE: z.string().optional(),
   TRUST_PROXY: z.coerce.number().int().min(0).max(2).default(0),
-  LOG_LEVEL: z.string().default('info')
+  LOG_LEVEL: z.string().default('info'),
+  TURNSTILE_SECRET: z.string().min(1).optional(),
+  TURNSTILE_HOSTNAMES: z.string().default('')
 });
 
 const input = { ...process.env };
