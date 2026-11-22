@@ -7,8 +7,9 @@ Wants=network-online.target
 Type=simple
 User=campus-bus
 Group=campus-bus
-WorkingDirectory=/var/www/campus-bus/current/backend
-EnvironmentFile=/etc/campus-bus/backend.env
+WorkingDirectory=/var/www/a2cloud/backend
+# systemd reads this protected file before dropping privileges to campus-bus.
+EnvironmentFile=/var/www/a2cloud/.env
 ExecStart=/usr/bin/node dist/server.js
 Restart=on-failure
 RestartSec=5
