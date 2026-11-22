@@ -15,7 +15,13 @@ const envSchema = z.object({
   TRUST_PROXY: z.coerce.number().int().min(0).max(2).default(0),
   LOG_LEVEL: z.string().default('info'),
   TURNSTILE_SECRET: z.string().min(1).optional(),
-  TURNSTILE_HOSTNAMES: z.string().default('')
+  TURNSTILE_HOSTNAMES: z.string().default(''),
+  EMAIL_NOTIFICATIONS_ENABLED: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
+  SMTP_HOST: z.string().min(1).default('mail.privateemail.com'),
+  SMTP_PORT: z.coerce.number().int().positive().default(465),
+  SMTP_USER: z.string().email().optional(),
+  SMTP_PASSWORD: z.string().min(1).optional(),
+  SMTP_FROM: z.string().email().optional()
 });
 
 const input = { ...process.env };

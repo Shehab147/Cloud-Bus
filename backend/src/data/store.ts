@@ -9,7 +9,7 @@ export type Status = 'active' | 'inactive';
 export type ScheduleType = 'weekday' | 'weekend' | 'seasonal';
 export type AnnouncementType = 'delay' | 'cancellation' | 'info';
 
-export type UserRecord = { id: number; name: string; email: string; passwordHash: string; role: Role; createdAt: string };
+export type UserRecord = { id: number; name: string; email: string; parentEmail?: string; passwordHash: string; role: Role; createdAt: string };
 export type RouteRecord = { id: number; name: string; description: string | null; status: Status; createdAt: string; updatedAt: string };
 export type StopRecord = { id: number; name: string; latitude: number; longitude: number; status: Status; createdAt: string; updatedAt: string };
 export type RouteStopRecord = { id: number; routeId: number; stopId: number; stopOrder: number };
@@ -18,6 +18,7 @@ export type DepartureRecord = { id: number; timetableId: number; stopId: number;
 export type AnnouncementRecord = { id: number; routeId: number | null; stopId: number | null; type: AnnouncementType; message: string; startsAt: string; endsAt: string; createdAt: string; updatedAt: string };
 export type FavoriteRecord = { id: number; userId: number; stopId: number; createdAt: string };
 export type AuditRecord = { id: number; userId: number | null; action: string; resource: string; resourceId: number | null; metadata: Record<string, unknown>; timestamp: string };
+export type NotificationRecord = { key: string; sentAt: string };
 
 export type CampusData = {
   users: UserRecord[];
@@ -29,6 +30,7 @@ export type CampusData = {
   announcements: AnnouncementRecord[];
   favorites: FavoriteRecord[];
   auditLogs: AuditRecord[];
+  notificationLogs: NotificationRecord[];
   counters: Record<string, number>;
 };
 
@@ -73,16 +75,18 @@ export function createSeedData(): CampusData {
   return {
     users: [], routes, stops, routeStops, timetables, departures,
     announcements: [{ id: 1, routeId: 1, stopId: null, type: 'info', message: 'Demo notice: orientation-week service uses the published timetable.', startsAt: DateTime.utc().minus({ days: 1 }).toISO()!, endsAt: DateTime.utc().plus({ days: 14 }).toISO()!, createdAt: timestamp, updatedAt: timestamp }],
-    favorites: [], auditLogs: [],
+    favorites: [], auditLogs: [], notificationLogs: [],
     counters: { users: 1, routes: 3, stops: 5, routeStops: 6, timetables: 3, departures: departureId, announcements: 2, favorites: 1, auditLogs: 1 }
   };
 }
+
+function normalizeData(data: CampusData) { data.notificationLogs ??= []; return data; }
 
 export async function readData(): Promise<CampusData> {
   if (cache) return cache;
   if (env.NODE_ENV === 'test') return (cache = createSeedData());
   try {
-    cache = JSON.parse(await readFile(dataFile, 'utf8')) as CampusData;
+    cache = normalizeData(JSON.parse(await readFile(dataFile, 'utf8')) as CampusData);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     cache = createSeedData();

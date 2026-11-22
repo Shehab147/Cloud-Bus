@@ -15,6 +15,7 @@ const controlChars = /[\u0000-\u001F\u007F]/;
 const registerSchema = z.object({
   name: z.string().trim().min(2, 'Enter your name (2–100 characters).').max(100, 'Enter your name (2–100 characters).').refine((value) => !controlChars.test(value), 'Name contains invalid characters.'),
   email: z.string().trim().toLowerCase().max(254).email('Enter a valid email address.'),
+  parentEmail: z.string().trim().toLowerCase().max(254).email('Enter a valid parent email address.').optional().or(z.literal('')),
   password: z.string().min(12, 'Use at least 12 characters.').max(128, 'Password must be 128 characters or less.'),
   turnstileToken: z.string().min(1).max(2048)
 }).strict();
@@ -23,13 +24,13 @@ const loginSchema = z.object({ email: z.string().trim().toLowerCase().max(254).e
 router.get('/csrf', (req, res) => res.json({ success: true, data: { csrfToken: ensureCsrfToken(req) } }));
 
 router.post('/register', authLimiter, validate(registerSchema), requireTurnstile('register'), async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, parentEmail, password } = req.body;
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await mutateData((data) => {
     if (data.users.some((candidate) => candidate.email.toLowerCase() === email)) {
       throw conflict('This email is already registered.', { email: 'This email is already registered.' });
     }
-    const created = { id: nextId(data, 'users'), name, email, passwordHash, role: 'student' as const, createdAt: isoNow() };
+    const created = { id: nextId(data, 'users'), name, email, parentEmail: parentEmail || undefined, passwordHash, role: 'student' as const, createdAt: isoNow() };
     data.users.push(created);
     return created;
   });
