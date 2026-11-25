@@ -9,7 +9,7 @@ export type Status = 'active' | 'inactive';
 export type ScheduleType = 'weekday' | 'weekend' | 'seasonal';
 export type AnnouncementType = 'delay' | 'cancellation' | 'info';
 
-export type UserRecord = { id: number; name: string; email: string; parentEmail?: string; passwordHash: string; role: Role; createdAt: string };
+export type UserRecord = { id: number; name: string; email: string; parentEmail?: string; passwordHash: string; role: Role; disabled?: boolean; createdAt: string };
 export type RouteRecord = { id: number; name: string; description: string | null; status: Status; createdAt: string; updatedAt: string };
 export type StopRecord = { id: number; name: string; latitude: number; longitude: number; status: Status; createdAt: string; updatedAt: string };
 export type RouteStopRecord = { id: number; routeId: number; stopId: number; stopOrder: number };

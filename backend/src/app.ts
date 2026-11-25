@@ -15,12 +15,14 @@ import timetablesRouter from './modules/timetables/router.js';
 import announcementsRouter from './modules/announcements/router.js';
 import favoritesRouter from './modules/favorites/router.js';
 import auditRouter from './modules/audit/router.js';
+import adminRouter from './modules/admin/router.js';
+import { rateLimitHandler } from './services/security-events.js';
 
 export const app = express();
 app.set('trust proxy', env.TRUST_PROXY);
 app.disable('x-powered-by');
 app.use(requestContext);
-app.use(pinoHttp({ level: env.LOG_LEVEL, redact: ['req.headers.cookie', 'req.headers.authorization', 'req.body.password'] }));
+app.use(pinoHttp({ level: env.LOG_LEVEL, redact: ['req.headers.cookie', 'req.headers.authorization', 'req.headers["x-csrf-token"]', 'res.headers["set-cookie"]', 'req.body.password'] }));
 app.use(helmet({ contentSecurityPolicy: isProduction ? undefined : false }));
 app.use(cors({ origin: env.APP_ORIGIN, credentials: true, methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Requested-With'] }));
 app.use((req, res, next) => {
@@ -36,7 +38,7 @@ const sessionOptions: session.SessionOptions = {
   cookie: { httpOnly: true, secure: isProduction, sameSite: 'lax', path: '/', maxAge: 8 * 60 * 60_000 }
 };
 app.use(session(sessionOptions));
-app.use('/api', rateLimit({ windowMs: 60_000, limit: 240, standardHeaders: 'draft-8', legacyHeaders: false }));
+app.use('/api', rateLimit({ windowMs: 60_000, limit: 240, standardHeaders: 'draft-8', legacyHeaders: false, handler: rateLimitHandler }));
 app.use('/api', requireCsrf);
 app.get('/api/health', async (_req, res) => {
   try { await readData(); res.json({ success: true, data: { status: 'ok' } }); }
@@ -49,5 +51,6 @@ app.use('/api', timetablesRouter);
 app.use('/api/announcements', announcementsRouter);
 app.use('/api/favorites', favoritesRouter);
 app.use('/api/audit-logs', auditRouter);
+app.use('/api/admin', adminRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);

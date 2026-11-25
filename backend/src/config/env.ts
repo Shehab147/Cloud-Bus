@@ -21,7 +21,9 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().int().positive().default(465),
   SMTP_USER: z.string().email().optional(),
   SMTP_PASSWORD: z.string().min(1).optional(),
-  SMTP_FROM: z.string().email().optional()
+  SMTP_FROM: z.string().email().optional(),
+  // Optional: name=url pairs of other service health endpoints shown on the admin dashboard.
+  HEALTH_TARGETS: z.string().max(1000).optional()
 });
 
 const input = { ...process.env };
