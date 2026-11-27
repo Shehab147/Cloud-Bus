@@ -8,11 +8,12 @@ import { requireAuth } from '../../middleware/auth.js';
 import { ensureCsrfToken } from '../../middleware/csrf.js';
 import { conflict, HttpError } from '../../utils/http-error.js';
 import { requireTurnstile } from '../../middleware/turnstile.js';
+import { rateLimitKey } from '../../utils/client-ip.js';
 import { sendRegistrationConfirmation } from '../../services/departure-notifications.js';
 import { rateLimitHandler, recordSecurityEvent } from '../../services/security-events.js';
 
 const router = Router();
-const authLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false, handler: rateLimitHandler });
+const authLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false, keyGenerator: rateLimitKey, handler: rateLimitHandler });
 const controlChars = /[\u0000-\u001F\u007F]/;
 const registerSchema = z.object({
   name: z.string().trim().min(2, 'Enter your name (2–100 characters).').max(100, 'Enter your name (2–100 characters).').refine((value) => !controlChars.test(value), 'Name contains invalid characters.'),

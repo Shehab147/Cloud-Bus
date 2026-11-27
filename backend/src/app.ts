@@ -8,6 +8,7 @@ import { env, isProduction } from './config/env.js';
 import { readData } from './data/store.js';
 import { requestContext, errorHandler, notFoundHandler } from './middleware/error.js';
 import { requireCsrf } from './middleware/csrf.js';
+import { rateLimitKey } from './utils/client-ip.js';
 import authRouter from './modules/auth/router.js';
 import routesRouter from './modules/routes/router.js';
 import stopsRouter from './modules/stops/router.js';
@@ -38,7 +39,7 @@ const sessionOptions: session.SessionOptions = {
   cookie: { httpOnly: true, secure: isProduction, sameSite: 'lax', path: '/', maxAge: 8 * 60 * 60_000 }
 };
 app.use(session(sessionOptions));
-app.use('/api', rateLimit({ windowMs: 60_000, limit: 240, standardHeaders: 'draft-8', legacyHeaders: false, handler: rateLimitHandler }));
+app.use('/api', rateLimit({ windowMs: 60_000, limit: 240, standardHeaders: 'draft-8', legacyHeaders: false, keyGenerator: rateLimitKey, handler: rateLimitHandler }));
 app.use('/api', requireCsrf);
 app.get('/api/health', async (_req, res) => {
   try { await readData(); res.json({ success: true, data: { status: 'ok' } }); }
