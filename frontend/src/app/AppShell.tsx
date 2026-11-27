@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext';
 import { Button } from '../components/ui';
 
 const publicLinks=[['Routes','/routes'],['Stops','/stops'],['Timetables','/timetables'],['Announcements','/announcements']] as const;
-const adminLinks=[['Overview','/admin'],['Routes','/admin/routes'],['Stops','/admin/stops'],['Timetables','/admin/timetables'],['Announcements','/admin/announcements'],['Audit logs','/admin/audit-logs']] as const;
+const adminLinks=[['Overview','/admin'],['Routes','/admin/routes'],['Stops','/admin/stops'],['Timetables','/admin/timetables'],['Announcements','/admin/announcements'],['Users','/admin/users'],['Audit logs','/admin/audit-logs']] as const;
 const navClass=({isActive}:{isActive:boolean})=>`inline-flex min-h-10 items-center border-b-2 px-3 text-sm font-medium transition-colors ${isActive?'border-primary text-primary':'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`;
 
 export function AppShell(){const {user,logout}=useAuth();const navigate=useNavigate();const location=useLocation();const [menu,setMenu]=useState(false);const [dark,setDark]=useState(()=>localStorage.getItem('campus-theme')==='dark'||(!localStorage.getItem('campus-theme')&&matchMedia('(prefers-color-scheme: dark)').matches));useEffect(()=>setMenu(false),[location.pathname]);useEffect(()=>{document.documentElement.classList.toggle('dark',dark);localStorage.setItem('campus-theme',dark?'dark':'light');},[dark]);const signOut=async()=>{await logout();navigate('/');};

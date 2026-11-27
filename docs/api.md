@@ -76,13 +76,18 @@ Timestamps must be ISO 8601 with an offset. Global notices have both `routeId` a
 | POST | `/favorites` | Student | `{stopId}`; user ID comes only from session. |
 | DELETE | `/favorites/:stopId` | Student | Removes only the current student's record. |
 | GET | `/audit-logs` | Admin | `resource,action,page,limit`; read-only. |
+| GET | `/admin/stats` | Admin | Totals, 14-day registrations, top favourited stops, active notice mix, reminder emails sent. |
+| GET | `/admin/security` | Admin | 24-hour counts of failed logins, 401/403, CSRF, Turnstile and rate-limit events; hourly series; repeated-failure addresses; recent events. In-memory per process; no emails, passwords or tokens. |
+| GET | `/admin/health` | Admin | Health of this server and of every `HEALTH_TARGETS` service (status, latency), plus uptime and memory. Targets come from server configuration only. |
+| GET | `/admin/users` | Admin | `q,role,page,limit`; returns id, name, email, role, disabled, created_at, favourites count. Never password hashes or parent emails. |
+| PATCH | `/admin/users/:id` | Admin | `{role?, disabled?}`; strict body. Cannot target your own account (403 `SELF_MODIFICATION`). Applies on the user's next request; audited. |
 | GET | `/health` | Operational | Minimal DB-backed liveness. No secrets or diagnostics. |
 
 ## Status codes
 
 - `200` read/update, `201` create, `204` delete/logout.
 - `400` malformed JSON, content type, query/param/body validation.
-- `401` missing/expired session, `403` role or CSRF rejection, `404` inaccessible/missing record.
+- `401` missing/expired/disabled session, `403` role, CSRF or disabled-account rejection, `404` inaccessible/missing record.
 - `409` duplicate/integrity/business conflict, `413` body too large, `429` rate limited.
 - `500` safe unexpected error, `503` local storage unavailable.
 

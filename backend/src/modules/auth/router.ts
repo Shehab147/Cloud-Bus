@@ -9,9 +9,10 @@ import { ensureCsrfToken } from '../../middleware/csrf.js';
 import { conflict, HttpError } from '../../utils/http-error.js';
 import { requireTurnstile } from '../../middleware/turnstile.js';
 import { sendRegistrationConfirmation } from '../../services/departure-notifications.js';
+import { rateLimitHandler, recordSecurityEvent } from '../../services/security-events.js';
 
 const router = Router();
-const authLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
+const authLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false, handler: rateLimitHandler });
 const controlChars = /[\u0000-\u001F\u007F]/;
 const registerSchema = z.object({
   name: z.string().trim().min(2, 'Enter your name (2–100 characters).').max(100, 'Enter your name (2–100 characters).').refine((value) => !controlChars.test(value), 'Name contains invalid characters.'),
@@ -43,9 +44,12 @@ router.post('/register', authLimiter, validate(registerSchema), requireTurnstile
 router.post('/login', authLimiter, validate(loginSchema), requireTurnstile('login'), async (req, res, next) => {
   const user = (await readData()).users.find((candidate) => candidate.email.toLowerCase() === req.body.email);
   if (!user || !(await bcrypt.compare(req.body.password, user.passwordHash))) throw new HttpError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
+  // Checked after the password so the response does not reveal which emails exist.
+  if (user.disabled) throw new HttpError(403, 'ACCOUNT_DISABLED', 'This account has been disabled. Contact an administrator.');
   req.session.regenerate((error) => {
     if (error) return next(error);
     req.session.user = { id: user.id, name: user.name, email: user.email, role: user.role };
+    recordSecurityEvent(req, 'login_success');
     const csrfToken = ensureCsrfToken(req);
     res.json({ success: true, data: { user: req.session.user, csrfToken }, message: 'Welcome back' });
   });

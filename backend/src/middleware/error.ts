@@ -1,6 +1,7 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { randomUUID } from 'node:crypto';
 import { HttpError } from '../utils/http-error.js';
+import { recordSecurityEventFromError } from '../services/security-events.js';
 
 export const requestContext: RequestHandler = (req, res, next) => {
   req.requestId = req.get('x-request-id')?.slice(0, 100) || randomUUID();
@@ -16,6 +17,7 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
   let normalized = error instanceof HttpError ? error : new HttpError(500, 'INTERNAL_ERROR', 'Something went wrong. Please try again.');
   if (error?.type === 'entity.too.large') normalized = new HttpError(413, 'PAYLOAD_TOO_LARGE', 'Request body is too large.');
   if (error instanceof SyntaxError && 'body' in error) normalized = new HttpError(400, 'MALFORMED_JSON', 'Request body contains invalid JSON.');
+  recordSecurityEventFromError(req, normalized.code);
   if (normalized.status >= 500) req.log?.error?.({ err: error, requestId: req.requestId }, 'request failed');
   res.status(normalized.status).json({
     success: false,
