@@ -20,15 +20,18 @@ export async function sendRegistrationConfirmation(name: string, to: string) {
   });
 }
 
-function pendingNotifications(data: CampusData, now: DateTime): PendingNotification[] {
+export function pendingNotifications(data: CampusData, now: DateTime): PendingNotification[] {
   const sent = new Set(data.notificationLogs.map((record) => record.key));
   const serviceDate = now.setZone(env.CAMPUS_TIMEZONE).toISODate()!;
   const dayOfWeek = now.setZone(env.CAMPUS_TIMEZONE).weekday % 7;
-  const recipients = new Map<number, string[]>();
+  // Collect every recipient per stop. Several students can save the same stop, so add to the set instead of replacing it.
+  const recipients = new Map<number, Set<string>>();
   for (const favorite of data.favorites) {
     const user = data.users.find((candidate) => candidate.id === favorite.userId);
     if (!user) continue;
-    recipients.set(favorite.stopId, [...new Set([user.email, user.parentEmail].filter((email): email is string => Boolean(email)))]);
+    const emails = recipients.get(favorite.stopId) ?? new Set<string>();
+    for (const email of [user.email, user.parentEmail]) if (email) emails.add(email);
+    recipients.set(favorite.stopId, emails);
   }
   const notifications: PendingNotification[] = [];
   for (const table of data.timetables.filter((item) => item.status === 'active' && item.effectiveFrom <= serviceDate && serviceDate <= item.effectiveTo)) {
@@ -36,10 +39,11 @@ function pendingNotifications(data: CampusData, now: DateTime): PendingNotificat
     if (!scheduleApplies(table.scheduleType, dayOfWeek, seasonal)) continue;
     const route = data.routes.find((item) => item.id === table.routeId && item.status === 'active');
     if (!route) continue;
-    for (const departure of data.departures.filter((item) => item.timetableId === table.id)) {
+    // Only today's departures: each weekday has its own record, so without this a student got one email per weekday.
+for (const departure of data.departures.filter((item) => item.timetableId === table.id && item.dayOfWeek === dayOfWeek)) {
       const stop = data.stops.find((item) => item.id === departure.stopId && item.status === 'active');
       const emails = recipients.get(departure.stopId);
-      if (!stop || !emails?.length) continue;
+      if (!stop || !emails?.size) continue;
       const departureAt = DateTime.fromISO(`${serviceDate}T${departure.departureTime}`, { zone: env.CAMPUS_TIMEZONE });
       const minutesAway = departureAt.diff(now.setZone(env.CAMPUS_TIMEZONE), 'minutes').minutes;
       if (minutesAway < 4.5 || minutesAway > 5.5) continue;
