@@ -23,7 +23,12 @@ export function requireTurnstile(expectedAction: string) {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         signal: AbortSignal.timeout(10_000),
-        body: new URLSearchParams({ secret: env.TURNSTILE_SECRET, response: token, remoteip: req.ip ?? '' })
+        // `remoteip` is optional. Behind Cloudflare and Nginx, `req.ip` can be an
+        // intermediary proxy address unless every hop has been configured and
+        // trusted precisely. Sending that address makes an otherwise valid
+        // Turnstile token fail verification, so let Cloudflare validate the token
+        // without an IP assertion.
+        body: new URLSearchParams({ secret: env.TURNSTILE_SECRET, response: token })
       });
       if (!response.ok) throw new Error(`siteverify ${response.status}`);
       const result = await response.json() as TurnstileResult;
