@@ -6,10 +6,10 @@ Group 11's campus shuttle timetable and announcement application. It helps visit
 
 - React, TypeScript, Vite, Tailwind CSS, Leaflet, and OpenStreetMap in `frontend/`.
 - Express and TypeScript in `backend/`.
-- A local JSON data file managed by Express. No Docker, PostgreSQL, or separate database server is required.
+- MongoDB for durable application records; Mongo Express can inspect and administer its collections.
 - In-memory Express sessions, CSRF protection, bcrypt passwords, rate limits, secure headers, role authorization, request IDs, and Zod validation.
 
-The JSON store is a good fit for this single-process lab project. Writes are serialized and saved through an atomic temporary-file rename. It is not intended for multiple API instances writing to the same file.
+MongoDB is the only durable application-data store. The API keeps a serialized in-process mutation queue so its draft-and-commit operations are applied consistently.
 
 ## Run frontend and backend together
 
@@ -40,7 +40,7 @@ npm run dev -w frontend
 
 ## Demo data and administrator
 
-Reset the local data file to the fictional demonstration records:
+Reset the configured MongoDB database to the fictional demonstration records:
 
 ```bash
 npm run data:reset
@@ -73,7 +73,7 @@ unset ADMIN_EMAIL ADMIN_NAME ADMIN_PASSWORD
 ## Important behavior
 
 - The MongoDB connection is configured with `MONGODB_URI`. The app uses collections named `users`, `routes`, `stops`, `routeStops`, `timetables`, `departures`, `announcements`, `favorites`, `auditLogs`, and `notificationLogs`.
-- Sessions are held in the Express process, so restarting the backend signs users out. Records in the JSON file remain.
+- Sessions are held in the Express process, so restarting the backend signs users out. Records remain in MongoDB.
 - Campus-local schedules use `Africa/Cairo`; absolute timestamps are ISO 8601 values and schedule times are local wall times.
 - Next-departure lookup searches seven days. Seasonal schedules override weekday/weekend schedules for the same route and date.
 - Route, stop, and timetable deletion endpoints soft-deactivate records. Favorites remain when a stop becomes inactive.

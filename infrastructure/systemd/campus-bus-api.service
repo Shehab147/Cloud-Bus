@@ -18,7 +18,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/log/campus-bus /var/lib/campus-bus
+ReadWritePaths=/var/log/campus-bus
 StandardOutput=journal
 StandardError=journal
 

@@ -10,9 +10,9 @@ Browser on http://localhost:5173
   -> MongoDB (configured by MONGODB_URI)
 ```
 
-The monorepo has two npm workspaces. `frontend` is a React/Vite SPA using the supplied Tailwind v4 template and Leaflet/OpenStreetMap. `backend` is one Express API. Express owns durable application records in a local JSON file and holds sessions in memory.
+The monorepo has two npm workspaces. `frontend` is a React/Vite SPA using the supplied Tailwind v4 template and Leaflet/OpenStreetMap. `backend` is one Express API. Durable application records are stored in MongoDB; sessions remain in memory.
 
-The storage module caches reads, serializes mutations, clones data before a mutation, and persists a completed mutation by renaming a temporary file. This gives a failed mutation rollback behavior and prevents partially written JSON in one Node process. The design deliberately supports one API process only; it does not provide multi-process locking or horizontal scaling.
+The storage module caches reads, serializes mutations, clones data before a mutation, and commits the completed draft to MongoDB. Mongo Express is an administration UI for the same database and is not used by the application at runtime.
 
 ## Service ownership boundaries
 

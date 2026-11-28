@@ -120,8 +120,8 @@ export async function readData(): Promise<CampusData> {
 async function persist(data: CampusData) {
   if (env.NODE_ENV === 'test') return;
   const db = await getDatabase();
-  // The application keeps its existing draft-and-commit behavior. This makes
-  // all routes use the same Mongo collection shapes as the former JSON store.
+  // The application keeps its existing draft-and-commit behavior while MongoDB
+  // remains the single durable store for every collection.
   for (const name of collectionNames) {
     const collection = db.collection(name);
     await collection.deleteMany({});

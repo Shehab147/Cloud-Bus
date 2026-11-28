@@ -14,7 +14,6 @@ describe('API security and response conventions', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ success: true, data: { status: 'ok' } });
     expect(response.headers['x-request-id']).toBeTruthy();
-    expect(JSON.stringify(response.body)).not.toContain('campus-bus.json');
   });
 
   it('requires a session-bound CSRF token for mutations', async () => {

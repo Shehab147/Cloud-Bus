@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { mutateData, readData, resetData } from '../src/data/store.js';
 
-describe('local JSON store mutation semantics', () => {
+describe('Mongo-backed store mutation semantics', () => {
   beforeEach(async () => resetData());
 
   it('commits a completed mutation', async () => {

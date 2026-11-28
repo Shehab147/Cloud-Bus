@@ -7,12 +7,12 @@ Last updated: 2026-10-31
 - [x] Read the complete implementation specification.
 - [x] Audited the repository: no pre-existing application, API, persistence layer, or tests were present.
 - [x] Audited the supplied Tailwind v4 CSS template and created `docs/template-style-map.md`.
-- [x] Selected the lab stack: React/Vite, Express with local JSON persistence, in-memory server sessions, Leaflet/OpenStreetMap.
+- [x] Selected the lab stack: React/Vite, Express with MongoDB persistence, in-memory server sessions, Leaflet/OpenStreetMap.
 - [x] Recorded assumptions and service ownership in the architecture documentation.
 
 ## Implementation slices
 
-- [x] Foundation: workspace, environment validation, JSON storage, API conventions, design system and app shell.
+- [x] Foundation: workspace, environment validation, MongoDB storage, API conventions, design system and app shell.
 - [x] Authentication: student registration, login/logout/me, sessions, CSRF, role guards, UI and tests.
 - [x] Routes/stops: public/admin APIs, atomic ordering, search/detail/map UI and tests.
 - [x] Timetables/departures/announcements: scheduling rules, admin/public UI and tests.
@@ -21,7 +21,7 @@ Last updated: 2026-10-31
 - [x] Security/deployment implementation: application controls, Nginx/systemd/CloudWatch templates, AWS/Cloudflare and restore runbook.
 - [x] Evidence/handover: API docs, Postman collection, test matrix, security observations, contribution log, demo script.
 
-External environment verification remains open and is not presented as complete: full browser/manual accessibility matrix, authorized end-to-end/load tests, deployment, TLS/origin-bypass checks, and an actual JSON backup restore drill.
+External environment verification remains open and is not presented as complete: full browser/manual accessibility matrix, authorized end-to-end/load tests, deployment, TLS/origin-bypass checks, and an actual MongoDB backup restore drill.
 
 ## Assumptions
 
@@ -30,7 +30,7 @@ External environment verification remains open and is not presented as complete:
 - Global announcements are allowed when both route and stop are null. If both are supplied, the stop must belong to the route.
 - Seasonal timetables override weekday/weekend timetables for the same route and local date. Overlapping active seasonal windows for one route are rejected.
 - Next-departure search uses a bounded seven-day horizon and treats displayed times as scheduled estimates.
-- Campus schedule time is `Africa/Cairo`; the JSON store uses ISO 8601 absolute timestamps and local `HH:mm` departure values separately.
+- Campus schedule time is `Africa/Cairo`; MongoDB records use ISO 8601 absolute timestamps and local `HH:mm` departure values separately.
 - Soft deactivation is the default for routes, stops, and timetables; favorites are preserved when a stop becomes inactive.
 
 ## Slice summaries

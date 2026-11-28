@@ -1,8 +1,8 @@
 # Single-server deployment runbook
 
-Target: Cloudflare proxied DNS/TLS → one Ubuntu server → Nginx → one Express process and the React static build. Express persists records in one local JSON file. There is no Docker or external database.
+Target: Cloudflare proxied DNS/TLS → one Ubuntu server → Nginx → one Express process, the React static build, and MongoDB. Mongo Express is optional and can inspect the same MongoDB collections.
 
-This storage model must run as one API process. Do not use Node cluster mode, PM2 multi-instance mode, multiple containers, or shared-network filesystem writers.
+The API uses MongoDB for durable records. Keep one API process until its in-process mutation strategy is redesigned for concurrent writers.
 
 ## 1. Server paths
 
@@ -10,10 +10,9 @@ Create a `campus-bus` system user and these protected locations:
 
 - `/var/www/campus-bus/releases` and `/var/www/campus-bus/current` for application releases.
 - `/etc/campus-bus/backend.env` owned by root, mode `0600`, for configuration.
-- `/var/lib/campus-bus` owned by `campus-bus`, mode `0700`, for the data file.
 - `/var/log/campus-bus` if file-based logs are enabled; journald is sufficient by default.
 
-Back up `/var/lib/campus-bus/campus-bus.json` before each deployment that changes data behavior.
+Back up the MongoDB database before each deployment that changes data behavior.
 
 ## 2. Environment
 
@@ -25,7 +24,7 @@ PORT=4000
 SESSION_SECRET=AT_LEAST_32_RANDOM_CHARACTERS
 APP_ORIGIN=https://a2cloud.online
 CAMPUS_TIMEZONE=Africa/Cairo
-DATA_FILE=/var/lib/campus-bus/campus-bus.json
+MONGODB_URI=mongodb://127.0.0.1:27017/mydatabase
 TRUST_PROXY=1
 LOG_LEVEL=info
 TURNSTILE_SECRET=SET_IN_YOUR_SECRET_STORE
@@ -45,7 +44,7 @@ npm test
 npm run build
 ```
 
-Copy the build and required runtime files into a timestamped release. Install production dependencies with the lockfile. For a new installation, starting Express creates the demo data file automatically. Do not run `data:reset` against a populated production file.
+Copy the build and required runtime files into a timestamped release. Install production dependencies with the lockfile. For a new installation, use `npm run data:reset` only when intentionally creating demo records; do not run it against a populated production database.
 
 Install the reviewed systemd and Nginx templates, then:
 
@@ -57,7 +56,7 @@ sudo systemctl reload nginx
 curl --fail --silent https://a2cloud.online/api/health
 ```
 
-The systemd unit grants the service write access to `/var/lib/campus-bus`. The Nginx template serves the SPA, proxies `/api` to `127.0.0.1:4000`, and applies request/security controls.
+The systemd unit does not require a writable application-data directory. The Nginx template serves the SPA, proxies `/api` to `127.0.0.1:4000`, and applies request/security controls.
 
 ## 4. Cloudflare and TLS
 
@@ -69,16 +68,15 @@ The systemd unit grants the service write access to `/var/lib/campus-bus`. The N
 
 ## 5. Backup and restore drill
 
-Back up the data file only after making a consistent copy. The simplest safe procedure for this coursework deployment is a short maintenance window:
+Back up MongoDB with a consistent database dump:
 
-1. Stop `campus-bus-api` so no write is in progress.
-2. Copy `/var/lib/campus-bus/campus-bus.json` to encrypted, access-controlled durable storage and record its checksum.
-3. Restart the service and verify `/api/health`.
+1. Use `mongodump` to create an encrypted, access-controlled backup and record its checksum.
+2. Verify the application health endpoint.
 
 Test restoration before sign-off:
 
-1. Restore a backup to a separate protected path.
-2. Set `DATA_FILE` for a non-production test instance to that restored path.
+1. Restore a backup to a separate non-production MongoDB database with `mongorestore`.
+2. Set `MONGODB_URI` for a non-production test instance to that database.
 3. Verify representative route ordering, timetables, favorites, announcements, and audit entries.
 4. Record backup ID, checksum, elapsed restore time, recovered timestamp, and verifier.
 
@@ -86,13 +84,13 @@ Test restoration before sign-off:
 
 - Stream journald and Nginx logs to the approved monitoring target with retention limits. Application logs redact cookies, authorization headers, and passwords.
 - Alert on service restarts, disk space, CPU/memory, Nginx 5xx responses, and backup failure.
-- Application rollback: point `current` to the previous retained release and restart the service. Restore the JSON backup only if the data format is incompatible; preserve the failed file first.
+- Application rollback: point `current` to the previous retained release and restart the service. Restore the MongoDB backup only if the data format is incompatible.
 - After rollback, verify health, login, public routes, a next-departure query, favorites, admin authorization, and logs.
 
 ## Troubleshooting
 
-- `503 /api/health`: inspect `journalctl -u campus-bus-api`, confirm `DATA_FILE` and parent-directory permissions, and validate the JSON file.
+- `503 /api/health`: inspect `journalctl -u campus-bus-api`, confirm that `MONGODB_URI` is correct and MongoDB is reachable.
 - Login loop: verify `APP_ORIGIN`, HTTPS, `TRUST_PROXY=1`, cookie behavior, and system clock.
 - Deep-link 404: confirm the Nginx SPA fallback is active.
 - Wrong departure day/time: verify `CAMPUS_TIMEZONE=Africa/Cairo` and the timetable's 0–6 day convention.
-- `EACCES` while saving: confirm `/var/lib/campus-bus` is owned by the service account and included in systemd `ReadWritePaths`.
+- MongoDB connection failures: verify MongoDB is running, its network access controls permit the API server, and the configured user has database permissions.

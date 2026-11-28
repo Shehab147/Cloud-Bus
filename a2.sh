@@ -74,7 +74,6 @@ rsync -a --delete \
   --exclude '.env' \
   --exclude '.git/' \
   --exclude 'node_modules/' \
-  --exclude 'backend/data/' \
   "$CHECKOUT_DIR/" "$APP_DIR/"
 
 # Install only the runtime dependencies after the compiled files are in place.
