@@ -1,5 +1,5 @@
 import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode, useEffect, useRef } from 'react';
-import { AlertTriangle, ChevronLeft, ChevronRight, LoaderCircle, Search, X } from 'lucide-react';
+import { CheckCircle2, CircleX, ChevronLeft, ChevronRight, LoaderCircle, Search, X } from 'lucide-react';
 import type { Pagination as PaginationData } from '../lib/types';
 
 const cx = (...values: (string | false | null | undefined)[]) => values.filter(Boolean).join(' ');
@@ -31,8 +31,8 @@ export function SearchBox({ value, onChange, placeholder='Search…' }: {value:s
 
 export function Loading({ label='Loading…' }: {label?:string}) { return <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-muted-foreground" role="status"><LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true"/>{label}</div>; }
 export function Empty({ title, description, action }: {title:string;description:string;action?:ReactNode}) { return <div className="flex min-h-40 flex-col items-center justify-center px-6 text-center"><div className="mb-3 rounded-full bg-muted p-3 text-muted-foreground"><Search className="h-5 w-5" aria-hidden="true"/></div><h3 className="text-sm font-semibold">{title}</h3><p className="mt-1 max-w-md text-sm text-muted-foreground">{description}</p>{action && <div className="mt-4">{action}</div>}</div>; }
-export function ErrorState({ message, onRetry }: {message:string;onRetry?:()=>void}) { return <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4" role="alert"><div className="flex gap-3"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true"/><div><p className="text-sm font-semibold text-destructive">Unable to load this information</p><p className="mt-1 text-sm text-muted-foreground">{message}</p>{onRetry&&<Button variant="outline" size="sm" className="mt-3" onClick={onRetry}>Try again</Button>}</div></div></div>; }
-export function SuccessState({ message }: {message:string}) { return <div className="rounded-lg border border-success/20 bg-success/5 p-3 text-sm font-medium text-success" role="status">{message}</div>; }
+export function ErrorState({ message, title='Something went wrong', onRetry }: {message:string;title?:string;onRetry?:()=>void}) { return <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4" role="alert"><div className="flex gap-3"><CircleX className="mt-0.5 h-5 w-5 shrink-0 text-destructive" aria-hidden="true"/><div><p className="text-sm font-semibold text-destructive">{title}</p><p className="mt-1 text-sm text-muted-foreground">{message}</p>{onRetry&&<Button variant="outline" size="sm" className="mt-3" onClick={onRetry}>Try again</Button>}</div></div></div>; }
+export function SuccessState({ message }: {message:string}) { return <div className="flex gap-3 rounded-lg border border-success/20 bg-success/5 p-3 text-sm font-medium text-success" role="status"><CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true"/><span>{message}</span></div>; }
 
 export function StatusBadge({ status }: {status:string}) { const tone = status==='active'||status==='info'?'bg-info/10 text-info':status==='delay'?'bg-warning/10 text-warning':status==='cancellation'||status==='inactive'?'bg-destructive/10 text-destructive':'bg-muted text-muted-foreground'; return <span className={cx('inline-flex rounded-full px-2.5 py-1 text-xs font-medium',tone)}>{status}</span>; }
 
