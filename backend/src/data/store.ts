@@ -107,8 +107,10 @@ function restoreCounters(data: CampusData) {
 }
 
 export async function readData(): Promise<CampusData> {
-  if (cache) return cache;
-  if (env.NODE_ENV === 'test') return (cache = createSeedData());
+  // Tests intentionally use an in-memory seed. Production reads MongoDB for
+  // each operation so changes made through Mongo Express (such as a role
+  // change) are immediately visible to authentication and authorization.
+  if (env.NODE_ENV === 'test') return (cache ??= createSeedData());
   const db = await getDatabase();
   const entries = await Promise.all(collectionNames.map(async (name) => [name, await db.collection(name).find({}, { projection: { _id: 0 } }).toArray()] as const));
   const metadata = await db.collection<MetadataRecord>('_metadata').findOne({ _id: 'counters' });
