@@ -7,7 +7,7 @@ Browser on http://localhost:5173
   -> React/Vite
   -> /api proxy
   -> Express on http://localhost:4000
-  -> backend/data/campus-bus.json
+  -> MongoDB (configured by MONGODB_URI)
 ```
 
 The monorepo has two npm workspaces. `frontend` is a React/Vite SPA using the supplied Tailwind v4 template and Leaflet/OpenStreetMap. `backend` is one Express API. Express owns durable application records in a local JSON file and holds sessions in memory.

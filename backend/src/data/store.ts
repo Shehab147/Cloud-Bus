@@ -1,7 +1,5 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { DateTime } from 'luxon';
+import { MongoClient, type Db, type Document } from 'mongodb';
 import { env } from '../config/env.js';
 
 export type Role = 'student' | 'admin';
@@ -34,10 +32,14 @@ export type CampusData = {
   counters: Record<string, number>;
 };
 
-const here = dirname(fileURLToPath(import.meta.url));
-export const dataFile = env.DATA_FILE ? resolve(here, '../../../', env.DATA_FILE) : resolve(here, '../../data/campus-bus.json');
 let cache: CampusData | null = null;
 let mutationQueue: Promise<unknown> = Promise.resolve();
+let mongoClient: MongoClient | null = null;
+let database: Db | null = null;
+
+const collectionNames = ['users', 'routes', 'stops', 'routeStops', 'timetables', 'departures', 'announcements', 'favorites', 'auditLogs', 'notificationLogs'] as const;
+type CollectionName = typeof collectionNames[number];
+type MetadataRecord = { _id: string; counters?: Record<string, number> };
 
 const now = () => new Date().toISOString();
 const localDate = () => DateTime.now().setZone(env.CAMPUS_TIMEZONE).toISODate()!;
@@ -82,25 +84,51 @@ export function createSeedData(): CampusData {
 
 function normalizeData(data: CampusData) { data.notificationLogs ??= []; return data; }
 
+async function getDatabase(): Promise<Db> {
+  if (database) return database;
+  if (!env.MONGODB_URI) throw new Error('MONGODB_URI must be configured outside test mode.');
+  mongoClient = new MongoClient(env.MONGODB_URI);
+  await mongoClient.connect();
+  database = mongoClient.db();
+  return database;
+}
+
+function emptyData(): CampusData {
+  return { users: [], routes: [], stops: [], routeStops: [], timetables: [], departures: [], announcements: [], favorites: [], auditLogs: [], notificationLogs: [], counters: {} };
+}
+
+function restoreCounters(data: CampusData) {
+  for (const name of collectionNames) {
+    if (name === 'notificationLogs') continue;
+    const records = data[name] as Array<{ id?: number }>;
+    const next = records.reduce((maximum, record) => Math.max(maximum, record.id ?? 0), 0) + 1;
+    data.counters[name] ??= next;
+  }
+}
+
 export async function readData(): Promise<CampusData> {
   if (cache) return cache;
   if (env.NODE_ENV === 'test') return (cache = createSeedData());
-  try {
-    cache = normalizeData(JSON.parse(await readFile(dataFile, 'utf8')) as CampusData);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-    cache = createSeedData();
-    await persist(cache);
-  }
+  const db = await getDatabase();
+  const entries = await Promise.all(collectionNames.map(async (name) => [name, await db.collection(name).find({}, { projection: { _id: 0 } }).toArray()] as const));
+  const metadata = await db.collection<MetadataRecord>('_metadata').findOne({ _id: 'counters' });
+  cache = normalizeData({ ...emptyData(), ...Object.fromEntries(entries), counters: metadata?.counters ?? {} } as CampusData);
+  restoreCounters(cache);
   return cache;
 }
 
 async function persist(data: CampusData) {
   if (env.NODE_ENV === 'test') return;
-  await mkdir(dirname(dataFile), { recursive: true });
-  const temporary = `${dataFile}.${process.pid}.tmp`;
-  await writeFile(temporary, `${JSON.stringify(data, null, 2)}\n`, { mode: 0o600 });
-  await rename(temporary, dataFile);
+  const db = await getDatabase();
+  // The application keeps its existing draft-and-commit behavior. This makes
+  // all routes use the same Mongo collection shapes as the former JSON store.
+  for (const name of collectionNames) {
+    const collection = db.collection(name);
+    await collection.deleteMany({});
+    const records = data[name] as unknown[];
+    if (records.length) await collection.insertMany(records as Document[]);
+  }
+  await db.collection<MetadataRecord>('_metadata').replaceOne({ _id: 'counters' }, { counters: data.counters }, { upsert: true });
 }
 
 export function nextId(data: CampusData, collection: keyof CampusData): number {

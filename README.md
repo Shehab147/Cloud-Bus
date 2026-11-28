@@ -26,7 +26,7 @@ Open `http://localhost:5173`. That one command starts:
 - Express API: `http://localhost:4000`
 - React frontend: `http://localhost:5173`
 
-Vite proxies browser requests from `/api` to Express. On first start, Express automatically creates `backend/data/campus-bus.json` with fictional demo routes and schedules.
+Vite proxies browser requests from `/api` to Express. The backend stores records in MongoDB; set `MONGODB_URI` in `.env` or `backend/.env` (for example, `mongodb://127.0.0.1:27017/mydatabase`). Mongo Express can inspect and edit those collections.
 
 To run the servers in separate terminals:
 
@@ -64,7 +64,7 @@ unset ADMIN_EMAIL ADMIN_NAME ADMIN_PASSWORD
 | `npm run dev` | Start Express and Vite together. |
 | `npm run dev -w backend` | Start only Express on port 4000. |
 | `npm run dev -w frontend` | Start only Vite on port 5173. |
-| `npm run data:reset` | Replace local data with fictional demo records. |
+| `npm run data:reset` | Replace MongoDB records with fictional demo records. |
 | `npm run admin:bootstrap` | Create or update an admin from environment values. |
 | `npm run typecheck` | Strict TypeScript checks for both workspaces. |
 | `npm test` | Run backend and frontend automated tests. |
@@ -72,7 +72,7 @@ unset ADMIN_EMAIL ADMIN_NAME ADMIN_PASSWORD
 
 ## Important behavior
 
-- The local store path is configured with `DATA_FILE`; its default is `backend/data/campus-bus.json`.
+- The MongoDB connection is configured with `MONGODB_URI`. The app uses collections named `users`, `routes`, `stops`, `routeStops`, `timetables`, `departures`, `announcements`, `favorites`, `auditLogs`, and `notificationLogs`.
 - Sessions are held in the Express process, so restarting the backend signs users out. Records in the JSON file remain.
 - Campus-local schedules use `Africa/Cairo`; absolute timestamps are ISO 8601 values and schedule times are local wall times.
 - Next-departure lookup searches seven days. Seasonal schedules override weekday/weekend schedules for the same route and date.

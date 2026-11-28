@@ -3,7 +3,11 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
-loadEnv({ path: resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env'), quiet: true });
+const configDirectory = dirname(fileURLToPath(import.meta.url));
+// Support both the repository .env and backend/.env. Values already provided
+// by the process (or the repository .env) take precedence.
+loadEnv({ path: resolve(configDirectory, '../../../.env'), quiet: true });
+loadEnv({ path: resolve(configDirectory, '../../.env'), quiet: true });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -11,7 +15,7 @@ const envSchema = z.object({
   SESSION_SECRET: z.string().min(32),
   APP_ORIGIN: z.string().url().default('http://localhost:5173'),
   CAMPUS_TIMEZONE: z.string().default('Africa/Cairo'),
-  DATA_FILE: z.string().optional(),
+  MONGODB_URI: z.string().url().optional(),
   TRUST_PROXY: z.coerce.number().int().min(0).max(2).default(0),
   LOG_LEVEL: z.string().default('info'),
   TURNSTILE_SECRET: z.string().min(1).optional(),
